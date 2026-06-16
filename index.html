@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0E1116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="面接アシスト">
+<title>面接アシスト</title>
+<style>
+  :root{
+    --ink:#0E1116; --panel:#161B22; --panel2:#1B222C; --line:#262E39;
+    --txt:#E8EDF2; --muted:#76828F; --muted2:#566270;
+    --live:#F5A623; --go:#4FD1C5; --warn:#FF8A5B;
+    --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overscroll-behavior:none}
+  body{background:var(--ink);color:var(--txt);
+    font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",-apple-system,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5;
+    padding:calc(var(--safe-t) + 8px) 12px calc(var(--safe-b) + 14px);
+    display:flex;flex-direction:column;gap:11px;min-height:100%;max-width:560px;margin:0 auto}
+
+  .top{display:flex;align-items:center;gap:9px;position:sticky;top:0}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--muted2);flex:0 0 auto}
+  .dot.on{background:var(--live);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,166,35,.45)}70%{box-shadow:0 0 0 9px rgba(245,166,35,0)}100%{box-shadow:0 0 0 0 rgba(245,166,35,0)}}
+  .ttl{margin-right:auto;font-size:13px;font-weight:700;letter-spacing:.03em}
+  .ttl small{display:block;font-size:10.5px;font-weight:500;color:var(--muted)}
+
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line);border-radius:11px;
+    font-size:14px;font-weight:600;color:var(--txt);background:var(--panel2);padding:11px 14px;transition:.12s}
+  button:active{transform:scale(.97)}
+  .icbtn{padding:10px 12px;min-width:46px}
+  .mic.on{background:#3a2c12;border-color:var(--live);color:#FFD89B}
+  .go{background:#12302d;border-color:var(--go);color:#9af0e7}
+  .go:disabled{opacity:.4}
+
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chip{font-size:13px;font-weight:600;padding:12px 10px;border-radius:12px;background:var(--panel);
+    border:1px solid var(--line);color:var(--muted);text-align:center;min-height:46px}
+  .chip.active{background:#14302c;border-color:var(--go);color:#9af0e7}
+
+  .hero{background:linear-gradient(180deg,var(--panel),#13191f);border:1px solid var(--line);
+    border-radius:16px;padding:18px;min-height:240px;display:flex;flex-direction:column;gap:13px;flex:1 0 auto}
+  .eyebrow{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);font-weight:700}
+  .q{font-size:15px;font-weight:700;color:#BFD0DF}.q .m{color:var(--live)}
+  .points{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .points li{font-size:20px;font-weight:600;letter-spacing:-.01em;display:flex;gap:11px;align-items:flex-start}
+  .points li::before{content:"";flex:0 0 auto;width:8px;height:8px;border-radius:2px;background:var(--go);margin-top:10px}
+  .caution{margin-top:auto;font-size:13px;color:var(--warn);background:#2a1a12;border:1px solid #4a2c1d;border-radius:11px;padding:10px 12px}
+  .caution::before{content:"⚠ "}
+  .ph{color:var(--muted2);font-size:14.5px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.8}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--go);border-radius:50%;animation:rot .7s linear infinite;margin-right:7px;vertical-align:-2px}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  .scribe{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+  .scribe h4{margin:0 0 4px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);font-weight:700}
+  .feed{font-size:13px;color:var(--muted);max-height:60px;overflow-y:auto;line-height:1.6;word-break:break-word}
+  .feed .it{color:var(--live);opacity:.85}
+
+  .row{display:flex;gap:8px}
+  .row input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;color:var(--txt);padding:12px;font-size:14px;font-family:inherit}
+  .row input:focus{outline:none;border-color:var(--go)}
+
+  .sheet{position:fixed;inset:0;background:rgba(8,10,13,.7);display:none;align-items:flex-end;z-index:9}
+  .sheet.open{display:flex}
+  .card{background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:560px;margin:0 auto;padding:18px 16px calc(var(--safe-b) + 18px);display:flex;flex-direction:column;gap:12px}
+  .card h3{margin:0;font-size:15px}
+  .card label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+  .card .hint{font-size:11.5px;color:var(--muted2);line-height:1.6}
+  .toggle{display:flex;align-items:center;gap:9px;font-size:13.5px}
+  .toggle input{accent-color:var(--live);width:18px;height:18px}
+
+  .note{font-size:11px;color:var(--muted2);text-align:center;line-height:1.6}
+  .err{color:var(--warn)}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="dot" id="dot"></div>
+    <div class="ttl">面接アシスト<small id="status">待機中 — マイク停止</small></div>
+    <button class="mic icbtn" id="mic">🎤</button>
+    <button class="icbtn" id="set">⚙️</button>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="hero" id="hero">
+    <div class="ph" id="ph">想定質問をタップ → 回答メモが大きく出ます。<br>🎤を押すと相手の声を文字化し、想定外の質問にも対応できます。</div>
+  </div>
+
+  <div class="scribe">
+    <h4>聞き取り</h4>
+    <div class="feed" id="feed"><span style="color:var(--muted2)">🎤を押すと、相手の発言がここに流れます。</span></div>
+  </div>
+
+  <div class="row">
+    <input id="mq" placeholder="質問を手入力（音声が拾えない時）" enterkeyhint="send">
+    <button class="go" id="mgo">出す</button>
+  </div>
+
+  <div class="note" id="note"></div>
+
+  <!-- settings sheet -->
+  <div class="sheet" id="sheet">
+    <div class="card">
+      <h3>設定</h3>
+      <div>
+        <label>AI自動生成（任意）— Anthropic APIキー</label>
+        <input id="key" type="password" placeholder="sk-ant-...（未入力なら想定質問＋手入力のみ）" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:11px;font-size:13px;font-family:inherit">
+        <div class="hint">キーはこの端末内（ブラウザ）にのみ保存。想定外の質問に自動で回答案を出したい場合のみ。無料で使うなら空のままでOK。</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="auto">相手が話し終えたら自動で回答生成（要キー）</label>
+      <button class="go" id="save">保存して閉じる</button>
+      <button id="clearbtn">聞き取りをクリア</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const PROFILE=`あなたは「インフォサクセスの高崎」という面接候補者の即答コーチ。本人が一瞬で見て自分の言葉で話せる"回答メモ"を作る。
+【候補者の実像（盛らずここから外れない）】名古屋・47歳・フリーランス(屋号インフォサクセス)。前職は三菱自/TTDCで自動車ECU制御エンジニア。軸=SEOコンサル5年/ライティング15年/WordPress12年+/GAS・API開発。
+業務自動化実績=①SEO記事生成バッチをVPS(ConoHa/Ubuntu)運用,Claude Code CLI×GAS連携。②CrowdWorks/Lancersの求人を自動収集→報酬抽出→仕分けするGASツール。③Google TasksカンバンのChrome拡張(OAuth2)。
+LLM/API=Claude・Gemini・ChatGPTを用途で使い分け。GSC・PageSpeed・Moz・SerpApi・Yahoo形態素解析等を統合。自動化主軸はGAS。Make/n8n/Zapierは"概念理解・必要なら短期習得"の立ち位置で盛らない。
+SEO実績=あるオウンドメディアで月3万→20万PV,18ヶ月120記事,主要KW1位率15%。本件はレベニューシェア=供給次第で報酬変動、それを理解し他案件と並走できる。
+【出力】入力は面接聞き取り（自他の声混在・誤認識あり）。面接官が候補者に投げた直近の質問を1つ推定し、必ず次のJSONのみ返す(説明やコードフェンス禁止): {"question":"推定質問(短く)","points":["要点(各30字以内・話し言葉)",...3〜5個],"caution":"言い過ぎ注意や逆質問(無ければ空)"} 事実にない実績は作らない。`;
+
+  const PRESETS=[
+    {t:"自己紹介",q:"自己紹介・これまでの経歴を教えてください",p:["名古屋拠点・フリーランス（屋号インフォサクセス）","前職は自動車ECUの制御エンジニア","独立後はSEO/ライティング＋GAS・API開発が軸","直近はLLMを組んだ業務自動化ツールを自作運用"],c:""},
+    {t:"RAG・エージェント",q:"RAG・AIエージェントの実装経験は？",p:["SEO記事生成バッチをVPSで運用（Claude Code CLI×GAS）","求人を自動収集→条件抽出→仕分けするGASツール","Claude/Gemini/ChatGPTを用途で使い分け","GSC/SerpApi等のAPIをツールに統合","要件定義〜納品まで自走できます"],c:"例は1つに絞り、工数・時間の数字で語る"},
+    {t:"Make/n8n",q:"Make/n8n/Zapierの実務経験は？",p:["自動化の主軸はGAS（柔軟に自作できる）","ノーコード基盤も同じ概念、必要なら短期で対応","課題から最適なツールを逆算する方針"],c:"GAS実績を厚く。無い経験は『習得して対応』で誠実に"},
+    {t:"報酬形態",q:"レベニューシェアでも問題ないですか？",p:["供給次第で報酬が変動する構造は理解しています","他案件と並走しながら中長期で取り組めます","裁量を持って自走できるのが強みです"],c:"逆質問：直近の案件獲得ペース／支払い条件を確認"},
+    {t:"苦労した実装",q:"一番苦労した実装と乗り越え方は？",p:["VPS×Claude Code CLI×GAS連携バッチの安定運用","APIのレート制限・エラー処理でつまづいた","ログ設計＋リトライ機構で自動復旧する形に"],c:""},
+    {t:"非エンジニア説明",q:"非エンジニアへの技術説明は？",p:["『何が・どれだけ楽になるか』を時間とコストに翻訳","専門用語を避けビフォーアフターで見せる","15年のライティングで“伝える”のは得意"],c:""},
+    {t:"コスト/対策",q:"LLMのコスト管理・ハルシ対策は？",p:["軽い処理は安価モデル、用途で使い分け","出力に検証ステップ・ルールチェックを挟む","重要箇所はソース参照・人の確認を残す"],c:""},
+    {t:"稼働条件",q:"稼働可能時間・他案件との並行は？",p:["平日9〜18時、週25〜40時間で対応可能","複数案件の並走経験あり","レスポンスは早めを心がけています"],c:""},
+  ];
+
+  const $=id=>document.getElementById(id);
+  const hero=$("hero"),ph=$("ph"),feed=$("feed"),dot=$("dot"),status=$("status"),micBtn=$("mic"),note=$("note");
+  const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+  // settings persistence (self-hosted page → localStorage OK)
+  let KEY=localStorage.getItem("ia_key")||"", AUTO=localStorage.getItem("ia_auto")==="1";
+  $("key").value=KEY; $("auto").checked=AUTO;
+
+  // chips
+  const chipsEl=$("chips");
+  PRESETS.forEach(p=>{const b=document.createElement("button");b.className="chip";b.textContent=p.t;
+    b.onclick=()=>{setActive(b);render({question:p.q,points:p.p,caution:p.c});};chipsEl.appendChild(b);});
+  function setActive(el){[...chipsEl.children].forEach(c=>c.classList.remove("active"));if(el)el.classList.add("active");}
+
+  function render(a){ph.style.display="none";
+    let h=`<div class="eyebrow">回答ポイント</div>`;
+    if(a.question)h+=`<div class="q"><span class="m">Q.</span> ${esc(a.question)}</div>`;
+    h+=`<ul class="points">`+a.points.map(p=>`<li>${esc(p)}</li>`).join("")+`</ul>`;
+    if(a.caution)h+=`<div class="caution">${esc(a.caution)}</div>`;
+    hero.innerHTML=h;}
+  function loading(){ph.style.display="none";hero.innerHTML=`<div class="ph"><span class="spin"></span>回答案を生成中…</div>`;}
+  function showErr(m){hero.innerHTML=`<div class="ph err">${esc(m)}</div>`;}
+
+  // speech
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const isiOS=/iP(hone|ad|od)/.test(navigator.userAgent);
+  let rec=null,listening=false,finalText="",lastSpeech=Date.now(),autoTimer=null;
+
+  if(!SR){micBtn.disabled=true;note.innerHTML="このブラウザは音声認識に未対応。<b>Android Chrome推奨</b>。想定質問ボタンと手入力をご利用ください。";}
+  else if(isiOS){note.innerHTML="iPhoneは音声認識が不安定です。<b>想定質問ボタン＋手入力</b>を主にお使いください（🎤は補助）。";}
+  else{note.innerHTML="PCのZoom音声をスピーカー出力にし、この端末を近くに置くと相手の声を拾えます。回答はメモ、自分の言葉で。";}
+
+  function startRec(){rec=new SR();rec.lang="ja-JP";rec.continuous=true;rec.interimResults=true;
+    rec.onresult=e=>{let it="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
+      if(r.isFinal)finalText=(finalText+" "+r[0].transcript).slice(-2000);else it+=r[0].transcript;}
+      lastSpeech=Date.now();feed.innerHTML=esc(finalText.slice(-500))+(it?` <span class="it">${esc(it)}</span>`:"");feed.scrollTop=feed.scrollHeight;
+      if(AUTO&&KEY)schedule();};
+    rec.onerror=ev=>{if(ev.error==="not-allowed"){status.textContent="マイク権限が必要です";stop();}};
+    rec.onend=()=>{if(listening){try{rec.start();}catch(_){}}};try{rec.start();}catch(_){}}
+  function stop(){listening=false;if(rec){try{rec.stop();}catch(_){}}rec=null;
+    dot.classList.remove("on");micBtn.classList.remove("on");status.textContent="待機中 — マイク停止";clearTimeout(autoTimer);}
+  micBtn.onclick=()=>{if(listening){stop();return;}listening=true;startRec();
+    dot.classList.add("on");micBtn.classList.add("on");status.textContent="聞き取り中…";};
+
+  function schedule(){clearTimeout(autoTimer);autoTimer=setTimeout(()=>{if(Date.now()-lastSpeech>=1100&&!busy&&finalText.trim().length>6)gen(finalText);},1200);}
+
+  // AI generate (needs user's key on self-hosted page)
+  let busy=false;
+  async function gen(text){
+    if(!KEY){showErr("AI生成にはAPIキーが必要です（⚙️で設定）。想定質問ボタンか手入力をどうぞ。");return;}
+    if(busy)return;busy=true;loading();setActive(null);
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,system:PROFILE,
+          messages:[{role:"user",content:"面接の聞き取り（誤認識・両者の声混在）。直近で面接官が候補者に投げた質問を推定し回答メモをJSONで返す:\n\n"+text.slice(-700)}]})});
+      const d=await res.json();
+      const raw=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+      const j=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      if(!j.points||!j.points.length)throw 0;render(j);
+    }catch(e){showErr("生成に失敗。もう一度試すか、想定質問ボタン／手入力をどうぞ。");}
+    finally{busy=false;}
+  }
+  $("mgo").onclick=()=>{const v=$("mq").value.trim();if(v)gen(v);};
+  $("mq").addEventListener("keydown",e=>{if(e.key==="Enter"){const v=e.target.value.trim();if(v)gen(v);}});
+
+  // settings
+  $("set").onclick=()=>$("sheet").classList.add("open");
+  $("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.remove("open");};
+  $("save").onclick=()=>{KEY=$("key").value.trim();AUTO=$("auto").checked;
+    localStorage.setItem("ia_key",KEY);localStorage.setItem("ia_auto",AUTO?"1":"0");$("sheet").classList.remove("open");};
+  $("clearbtn").onclick=()=>{finalText="";feed.innerHTML='<span style="color:var(--muted2)">クリアしました。</span>';ph.style.display="flex";hero.innerHTML="";hero.appendChild(ph);setActive(null);$("sheet").classList.remove("open");};
+
+  // PWA manifest (runtime, for single-file deploy) + home-screen icon
+  try{
+    const c=document.createElement("canvas");c.width=c.height=192;const x=c.getContext("2d");
+    x.fillStyle="#0E1116";x.fillRect(0,0,192,192);x.fillStyle="#4FD1C5";
+    x.font="bold 110px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("面",96,104);
+    const icon=c.toDataURL("image/png");
+    const ap=document.createElement("link");ap.rel="apple-touch-icon";ap.href=icon;document.head.appendChild(ap);
+    const mani={name:"面接アシスト",short_name:"面接",display:"standalone",orientation:"portrait",
+      background_color:"#0E1116",theme_color:"#0E1116",start_url:".",icons:[{src:icon,sizes:"192x192",type:"image/png"}]};
+    const link=document.createElement("link");link.rel="manifest";
+    link.href=URL.createObjectURL(new Blob([JSON.stringify(mani)],{type:"application/manifest+json"}));
+    document.head.appendChild(link);
+  }catch(_){}
+})();
+</script>
+</body>
+</html>
